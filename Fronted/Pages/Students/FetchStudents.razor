@@ -1,0 +1,69 @@
+﻿@page "/students/fetchstudents"
+
+@using Fronted.Models
+@using Fronted.Services
+
+@inject NavigationManager Navigation
+@inject IStudentsService _studentsService
+
+<div class="container-fluid">
+
+    <div class="row ">
+        <h3>Listado de estudiantes</h3>
+        <button type="button" class="btn btn-sm btn-success" @onclick='() => Navigation.NavigateTo("students/create")'><i class="fas fa-plus pr-2"></i> Nuevo</button>
+    </div>    
+
+    <div class="row" >
+        <table class="table table-striped table-hover ">
+            <thead>
+                <tr>
+                <th>Id</th>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Edad</th>
+                <th>Correo</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!students.Any())
+                {
+                    <tr>
+                        <button class="btn btn-primary" type="button" disabled>
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span class="visually-hidden">Loading...</span>
+                        </button>
+                    </tr>
+                }
+                else
+                {
+                     @foreach (var student in students)
+            { 
+                    <tr @onclick="()=> RedirectTo(student.Id)" class="cursor-pointer">
+                    <td>@student.Id </td>
+                    <td>@student.Nombre</td>
+                    <td>@student.Apellido</td>
+                    <td>@student.Edad</td>
+                    <td>@student.Correo</td>
+                </tr>
+            }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private List<Students> students = new List<Students>();
+
+    protected override async Task OnInitializedAsync()
+    {
+         await base.OnInitializedAsync();
+         students = await  _studentsService.GetStudents();
+    }
+
+    private void RedirectTo(int studentsId)
+    {
+        Navigation.NavigateTo($"/students/{studentsId}");
+    }
+    
+}

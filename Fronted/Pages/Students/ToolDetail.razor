@@ -1,0 +1,119 @@
+@page "/students/{Id:int}"
+@page "/students/create"
+
+@using Blazored.Modal
+@using Blazored.Modal.Services
+@using Fronted.Models
+@using Fronted.Services
+@using Components
+
+@inject IStudentsService _studentsService
+@inject IToastService ToastService
+@inject NavigationManager Navigation
+
+<div class="conteiner d-flex justify-content-center m-0 p-0">
+    <EditForm Model="@students" OnValidSubmit="@HandleOnValidSubmit" class="col-sm-12 col-md-10 col-lg-8 p-0">
+        <DataAnnotationsValidator />
+
+        <div class="card">
+
+            <div class="card-header">
+                <h3> DATOS ID @students.Id</h3>
+            </div>
+
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="name" class="form-label">Nombre</label>
+                    <InputText id="name" @bind-Value="students.Nombre" class="form-control" placeholder="Nombre" />
+                    <ValidationMessage For="@(() =>students.Nombre)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="apellido" class="form-label">Apellido </label>
+                    <InputText id="apellido" @bind-Value="students.Apellido" class="form-control" placeholder="Apellido" />
+                    <ValidationMessage For="@(() =>students.Apellido)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="edad" class="form-label">Edad </label>
+                    <InputNumber id="edad" @bind-Value="students.Edad" class="form-control" placeholder="Edad" />
+                    <ValidationMessage For="@(() =>students.Edad)" />
+                </div>
+                <div class="form-group">
+                    <label for="Correo" class="form-label">Correo</label>
+                    <InputText id="correo" @bind-Value="students.Correo" class="form-control" placeholder="Correo" />
+                    <ValidationMessage For="@(() =>students.Correo)" />
+                </div>
+                <br/>
+                <div class="form-group">
+
+                    <button type="submit"  class="btn btn-primary btn-sm" hidden="@(Id == null)"><i class="fa fa-save pr-2" /> Guardar</button>
+                    <button type="submit" class="btn btn-success btn-sm" hidden="@(Id != null)"><i class="fa fa-plus pr-2" /> Crear</button>
+                    <a href="/students/fetchstudents" class="btn btn-secondary btn-sm"><i class="fa fa-times pr-2" /> Cancelar</a>
+                    <button type="button" class="btn btn-danger btn-sm float-end" hidden="@(Id == null)" @onclick="(async () => await ShowConfirmationModal())"><i class="fa fa-trash pr-2" /> Eliminar</button>
+                </div>
+            </div>
+
+        </div>
+
+    </EditForm>
+</div>
+
+@code{
+    
+    [Parameter]
+    public int? Id {get;set;}
+    public Students students = new Students();
+    [CascadingParameter] IModalService Modal {get; set;}
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(Id != null)
+        {
+            students = await _studentsService.GetStudents(Id.Value);
+        }
+    }
+
+    private async Task HandleOnValidSubmit()
+    {
+        try
+        {
+            if(Id != null)
+                await _studentsService.UpdateStudents(Id.Value, students);
+            else
+            {
+                Students newStudents = await _studentsService.CreateStudents(students);
+                Navigation.NavigateTo($"/students/{newStudents.Id}");
+            }
+
+            ToastService.ShowSuccess("Se han guardado los datos correctamente","Buen trabajo!");
+        }
+        catch (System.Exception)
+        {
+            
+            ToastService.ShowError("Se ha presentado un error al guardar los datos","Ops!");
+        }
+        
+    }
+
+    private async Task ShowConfirmationModal(){
+        
+        var parameters = new ModalParameters();
+        parameters.Add("StudentsId", Id);
+        
+        var confirmationModal = Modal.Show<ConfirmationModal>("Eliminar Estudiante?", parameters);
+        var result = await confirmationModal.Result;
+
+        if(!result.Cancelled)
+        {
+            ToastService.ShowSuccess("Se ha eliminado el estudiante!","Buen trabajo!");
+            Navigation.NavigateTo($"/fetchstudents");
+        }
+
+
+
+    }
+
+   
+}
+
